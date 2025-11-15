@@ -5,6 +5,8 @@ version = "0.1.0"
 dependencies = [
     "boto3>=1.40.74",
     "dagster==1.12.2",
+    "ollama>=0.6.1",
+    "pandas>=2.3.3",
     "psycopg2-binary>=2.9.11",
     "pymongo>=4.15.4",
     "python-dotenv>=1.2.1",

@@ -2,6 +2,7 @@
 
 import os
 from contextlib import contextmanager
+from typing import Any
 
 import boto3
 import pymongo
@@ -23,6 +24,7 @@ class PostgresResource(ConfigurableResource):
     user: str = os.getenv("POSTGRES_USER", "brain")
     password: str = os.getenv("POSTGRES_PASSWORD", "brain_dev_password")
     database: str = os.getenv("POSTGRES_DB", "brain")
+    _pool: Any = None
 
     def setup_for_execution(self, context) -> None:
         self._pool = pool.SimpleConnectionPool(
@@ -58,6 +60,7 @@ class PgVectorResource(ConfigurableResource):
     user: str = os.getenv("PGVECTOR_USER", "brain")
     password: str = os.getenv("PGVECTOR_PASSWORD", "brain_dev_password")
     database: str = os.getenv("PGVECTOR_DB", "brain_vectors")
+    _pool: Any = None
 
     def setup_for_execution(self, context) -> None:
         self._pool = pool.SimpleConnectionPool(
@@ -94,6 +97,8 @@ class MongoResource(ConfigurableResource):
     password: str = os.getenv("MONGO_PASSWORD", "brain_dev_password")
     database: str = os.getenv("MONGO_DB", "brain")
     auth_source: str = os.getenv("MONGO_AUTH_SOURCE", "admin")
+    _client: Any = None
+    _db: Any = None
 
     def setup_for_execution(self, context) -> None:
         connection_string = (
@@ -141,6 +146,8 @@ class DynamoDBResource(ConfigurableResource):
 
     endpoint_url: str = os.getenv("DYNAMODB_ENDPOINT", "http://localhost:8000")
     region_name: str = os.getenv("DYNAMODB_REGION", "us-east-1")
+    _client: Any = None
+    _resource: Any = None
 
     def setup_for_execution(self, context) -> None:
         self._client = boto3.client(

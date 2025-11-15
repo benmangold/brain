@@ -4,7 +4,7 @@ from datetime import datetime
 
 from dagster import asset, AssetExecutionContext
 
-from .resources import (
+from orchestration.db.resources import (
     PostgresResource,
     PgVectorResource,
     MongoResource,
@@ -12,11 +12,13 @@ from .resources import (
     DynamoDBResource,
 )
 
+DB_CONNECTION_TEST_GROUP = "database_connectivity"
 
-@asset
+
+@asset(group_name=DB_CONNECTION_TEST_GROUP)
 def test_postgres_connection(
-    context: AssetExecutionContext,
-    postgres: PostgresResource
+        context: AssetExecutionContext,
+        postgres: PostgresResource
 ) -> dict:
     """Test PostgreSQL connection and create a test table."""
 
@@ -53,10 +55,10 @@ def test_postgres_connection(
             }
 
 
-@asset
+@asset(group_name=DB_CONNECTION_TEST_GROUP)
 def test_pgvector_connection(
-    context: AssetExecutionContext,
-    pgvector: PgVectorResource
+        context: AssetExecutionContext,
+        pgvector: PgVectorResource
 ) -> dict:
     """Test pgvector connection and create a test table with vector column."""
 
@@ -97,10 +99,10 @@ def test_pgvector_connection(
             }
 
 
-@asset
+@asset(group_name=DB_CONNECTION_TEST_GROUP)
 def test_mongo_connection(
-    context: AssetExecutionContext,
-    mongo: MongoResource
+        context: AssetExecutionContext,
+        mongo: MongoResource
 ) -> dict:
     """Test MongoDB connection and insert a test document."""
 
@@ -127,10 +129,10 @@ def test_mongo_connection(
     }
 
 
-@asset
+@asset(group_name=DB_CONNECTION_TEST_GROUP)
 def test_redis_connection(
-    context: AssetExecutionContext,
-    redis: RedisResource
+        context: AssetExecutionContext,
+        redis: RedisResource
 ) -> dict:
     """Test Redis connection and set/get a key."""
 
@@ -161,10 +163,10 @@ def test_redis_connection(
     }
 
 
-@asset
+@asset(group_name=DB_CONNECTION_TEST_GROUP)
 def test_dynamodb_connection(
-    context: AssetExecutionContext,
-    dynamodb: DynamoDBResource
+        context: AssetExecutionContext,
+        dynamodb: DynamoDBResource
 ) -> dict:
     """Test DynamoDB Local connection and create a test table."""
 
@@ -215,13 +217,15 @@ def test_dynamodb_connection(
     }
 
 
-@asset(deps=[
-    test_postgres_connection,
-    test_pgvector_connection,
-    test_mongo_connection,
-    test_redis_connection,
-    test_dynamodb_connection,
-])
+@asset(group_name=DB_CONNECTION_TEST_GROUP,
+       deps=[
+           test_postgres_connection,
+           test_pgvector_connection,
+           test_mongo_connection,
+           test_redis_connection,
+           test_dynamodb_connection,
+       ]
+       )
 def all_databases_tested(context: AssetExecutionContext) -> dict:
     """Summary asset that depends on all database tests."""
 
