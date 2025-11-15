@@ -1,0 +1,36 @@
+[project]
+name = "orchestration"
+requires-python = ">=3.10,<3.14"
+version = "0.1.0"
+dependencies = [
+    "boto3>=1.40.74",
+    "dagster==1.12.2",
+    "psycopg2-binary>=2.9.11",
+    "pymongo>=4.15.4",
+    "python-dotenv>=1.2.1",
+    "redis>=7.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+    "dagster-dg-cli",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+force-include = { "pyproject.toml" = "pyproject.toml" }
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "orchestration"
+registry_modules = [
+    "orchestration.components.*",
+]
+
+
