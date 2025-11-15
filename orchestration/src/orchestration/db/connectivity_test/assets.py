@@ -12,10 +12,10 @@ from orchestration.db.resources import (
     DynamoDBResource,
 )
 
-DB_CONNECTION_TEST_GROUP = "database_connectivity"
+DB_CONNECTIVITY_TEST_GROUP_NAME = "database_connectivity"
 
 
-@asset(group_name=DB_CONNECTION_TEST_GROUP)
+@asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
 def test_postgres_connection(
         context: AssetExecutionContext,
         postgres: PostgresResource
@@ -55,7 +55,7 @@ def test_postgres_connection(
             }
 
 
-@asset(group_name=DB_CONNECTION_TEST_GROUP)
+@asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
 def test_pgvector_connection(
         context: AssetExecutionContext,
         pgvector: PgVectorResource
@@ -99,7 +99,7 @@ def test_pgvector_connection(
             }
 
 
-@asset(group_name=DB_CONNECTION_TEST_GROUP)
+@asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
 def test_mongo_connection(
         context: AssetExecutionContext,
         mongo: MongoResource
@@ -129,7 +129,7 @@ def test_mongo_connection(
     }
 
 
-@asset(group_name=DB_CONNECTION_TEST_GROUP)
+@asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
 def test_redis_connection(
         context: AssetExecutionContext,
         redis: RedisResource
@@ -163,7 +163,7 @@ def test_redis_connection(
     }
 
 
-@asset(group_name=DB_CONNECTION_TEST_GROUP)
+@asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
 def test_dynamodb_connection(
         context: AssetExecutionContext,
         dynamodb: DynamoDBResource
@@ -217,7 +217,7 @@ def test_dynamodb_connection(
     }
 
 
-@asset(group_name=DB_CONNECTION_TEST_GROUP,
+@asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME,
        deps=[
            test_postgres_connection,
            test_pgvector_connection,

@@ -6,12 +6,12 @@ from dagster import (
     ScheduleDefinition,
 )
 
-from orchestration.db.assets import DB_CONNECTION_TEST_GROUP
+from orchestration.db.connectivity_test.assets import DB_CONNECTIVITY_TEST_GROUP_NAME
 
 # Define a job that materializes all database test assets
 database_tests_job = define_asset_job(
     name="database_connectivity_tests",
-    selection=AssetSelection.groups(DB_CONNECTION_TEST_GROUP),
+    selection=AssetSelection.groups(DB_CONNECTIVITY_TEST_GROUP_NAME),
     description="Test connectivity to all local databases",
 )
 

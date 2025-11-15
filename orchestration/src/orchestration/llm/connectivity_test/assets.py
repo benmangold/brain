@@ -16,6 +16,7 @@ from typing import List, Dict, Any
 import ollama
 import json
 
+LLM_CONNECTIVITY_TEST_GROUP_NAME = "llm_connectivity"
 
 class OllamaConfig(Config):
     """Configuration for Ollama model interactions."""
@@ -25,7 +26,8 @@ class OllamaConfig(Config):
 
 
 @asset(
-    description="Pull the Ollama model if not already available locally"
+    description="Pull the Ollama model if not already available locally",
+    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
 )
 def ollama_model(context: AssetExecutionContext, config: OllamaConfig) -> str:
     """Ensure the specified Ollama model is available locally."""
@@ -51,6 +53,7 @@ def ollama_model(context: AssetExecutionContext, config: OllamaConfig) -> str:
 
 @asset(
     description="Generate sample prompts for LLM processing",
+    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME,
     deps=[ollama_model]
 )
 def sample_prompts(context: AssetExecutionContext) -> List[Dict[str, str]]:
@@ -78,7 +81,8 @@ def sample_prompts(context: AssetExecutionContext) -> List[Dict[str, str]]:
 
 
 @asset(
-    description="Process prompts through Ollama LLM and collect responses"
+    description="Process prompts through Ollama LLM and collect responses",
+    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
 )
 def llm_responses(
         context: AssetExecutionContext,
@@ -132,7 +136,8 @@ def llm_responses(
 
 
 @asset(
-    description="Aggregate and analyze LLM processing results"
+    description="Aggregate and analyze LLM processing results",
+    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
 )
 def processing_summary(
         context: AssetExecutionContext,

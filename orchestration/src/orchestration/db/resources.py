@@ -5,7 +5,6 @@ from contextlib import contextmanager
 from typing import Any
 
 import boto3
-import pymongo
 import redis
 from dagster import ConfigurableResource
 from dotenv import load_dotenv

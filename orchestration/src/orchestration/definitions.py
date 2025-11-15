@@ -2,9 +2,9 @@
 
 from dagster import Definitions, load_assets_from_modules
 
-from .db import assets as db_assets
+from .db.connectivity_test import assets as db_assets
 
-from .llm import assets as llm_assets
+from .llm.connectivity_test import assets as llm_assets
 
 from orchestration.db.resources import (
     PostgresResource,
@@ -13,7 +13,7 @@ from orchestration.db.resources import (
     RedisResource,
     DynamoDBResource,
 )
-from orchestration.db.jobs import (
+from orchestration.db.connectivity_test.jobs import (
     database_tests_job,
     daily_database_tests_schedule,
     hourly_database_tests_schedule,
