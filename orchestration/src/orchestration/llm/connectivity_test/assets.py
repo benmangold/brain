@@ -1,7 +1,6 @@
 """
-Dagster assets for orchestrating Ollama LLM calls locally.
-Install: pip install dagster ollama
-Run: dagster dev
+Dagster assets for Ollama LLM orchestration.
+Uses resources for all Ollama interactions.
 """
 
 from dagster import (
@@ -9,175 +8,334 @@ from dagster import (
     AssetExecutionContext,
     MaterializeResult,
     MetadataValue,
-    Definitions,
-    Config,
+    RetryPolicy,
 )
 from typing import List, Dict, Any
-import ollama
-import json
+import pandas as pd
+from datetime import datetime
+from orchestration.llm.resources import OllamaResource, DataProcessingResource
 
-LLM_CONNECTIVITY_TEST_GROUP_NAME = "llm_connectivity"
-
-class OllamaConfig(Config):
-    """Configuration for Ollama model interactions."""
-    model: str = "llama3.2:1b"
-    temperature: float = 0.7
-    num_ctx: int = 2048
-
+LLM_CONNECTIVITY_TEST_GROUP_NAME = 'llm_connectivity'
 
 @asset(
-    description="Pull the Ollama model if not already available locally",
+    description="Verify Ollama models are available and ready",
+    retry_policy=RetryPolicy(max_retries=2, delay=5),
     group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
 )
-def ollama_model(context: AssetExecutionContext, config: OllamaConfig) -> str:
-    """Ensure the specified Ollama model is available locally."""
-    try:
-        # Pull the model (idempotent - won't re-download if exists)
-        context.log.info(f"Ensuring model {config.model} is available...")
-        ollama.pull(config.model)
+def available_models(
+    context: AssetExecutionContext,
+    ollama: OllamaResource,
+) -> Dict[str, Any]:
+    """
+    Check which models are available and pull if needed.
 
-        # Verify model is available
-        models = ollama.list()
-        model_names = [m['model'] for m in models['models']]
+    Returns:
+        Dict mapping model names to their status
+    """
+    context.log.info("Checking Ollama model availability...")
 
-        if config.model in model_names or f"{config.model}:latest" in model_names:
-            context.log.info(f"Model {config.model} is ready")
-            return config.model
+    # Ensure primary and fallback models are available
+    model_status = ollama.ensure_models_available()
+
+    # Log results
+    for model_name, status in model_status.items():
+        if status['status'] == 'ready':
+            context.log.info(f"✓ Model {model_name} is ready")
         else:
-            raise Exception(f"Model {config.model} not found after pull")
+            context.log.warning(f"✗ Model {model_name} failed: {status.get('error', 'Unknown error')}")
 
-    except Exception as e:
-        context.log.error(f"Error with model setup: {e}")
-        raise
+    # List all available models
+    all_models = ollama.list_available_models()
+    context.log.info(f"Total models available locally: {len(all_models)}")
+
+    return model_status
 
 
 @asset(
-    description="Generate sample prompts for LLM processing",
-    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME,
-    deps=[ollama_model]
+    description="Load or generate input data for LLM processing",
+    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
 )
-def sample_prompts(context: AssetExecutionContext) -> List[Dict[str, str]]:
-    """Create a list of sample prompts to process."""
-    prompts = [
+def input_data(context: AssetExecutionContext) -> pd.DataFrame:
+    """
+    Create or load input dataset for LLM processing.
+
+    In production, this would load from a database, API, or file.
+
+    Returns:
+        DataFrame with text data and processing instructions
+    """
+
+    # Sample data - replace with your actual data source
+    data = [
         {
-            "id": "sentiment_1",
-            "prompt": "Analyze the sentiment of this text: 'I love using Dagster for data orchestration!'",
-            "task": "sentiment_analysis"
+            'id': 1,
+            'text': 'Dagster is a modern data orchestration platform for building, deploying, and monitoring data pipelines.',
+            'task': 'summarize',
+            'expected_length': 'one sentence'
         },
         {
-            "id": "summarize_1",
-            "prompt": "Summarize in one sentence: Data orchestration helps teams coordinate complex data workflows efficiently.",
-            "task": "summarization"
+            'id': 2,
+            'text': 'The weather is absolutely terrible today with heavy rain and strong winds.',
+            'task': 'sentiment',
+            'expected_length': 'one word: positive, negative, or neutral'
         },
         {
-            "id": "extract_1",
-            "prompt": "Extract key technologies from: 'Our stack uses Python, Dagster, Ollama, and local LLMs for processing.'",
-            "task": "extraction"
-        }
+            'id': 3,
+            'text': 'Our technology stack includes Python, JavaScript, SQL, Docker, and Kubernetes.',
+            'task': 'extract',
+            'expected_length': 'comma-separated list'
+        },
+        {
+            'id': 4,
+            'text': 'Machine learning models can be deployed locally using tools like Ollama for privacy and cost savings.',
+            'task': 'classify',
+            'expected_length': 'technical category'
+        },
+        {
+            'id': 5,
+            'text': 'Data engineering involves building robust pipelines to extract, transform, and load data efficiently.',
+            'task': 'keywords',
+            'expected_length': '3-5 keywords'
+        },
+        {
+            'id': 6,
+            'text': 'The new product launch exceeded expectations with 10,000 users in the first week.',
+            'task': 'sentiment',
+            'expected_length': 'one word'
+        },
+        {
+            'id': 7,
+            'text': 'Cloud computing, edge computing, and quantum computing represent different paradigms.',
+            'task': 'extract',
+            'expected_length': 'list'
+        },
     ]
 
-    context.log.info(f"Generated {len(prompts)} sample prompts")
-    return prompts
+    df = pd.DataFrame(data)
+    context.log.info(f"Loaded {len(df)} records for processing")
+
+    # Log task distribution
+    task_counts = df['task'].value_counts().to_dict()
+    context.log.info(f"Task distribution: {task_counts}")
+
+    return df
 
 
 @asset(
-    description="Process prompts through Ollama LLM and collect responses",
+    description="Process input data through Ollama LLM",
+    retry_policy=RetryPolicy(max_retries=1, delay=3),
     group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
 )
-def llm_responses(
-        context: AssetExecutionContext,
-        config: OllamaConfig,
-        ollama_model: str,
-        sample_prompts: List[Dict[str, str]]
-) -> List[Dict[str, Any]]:
-    """Send prompts to Ollama and collect responses."""
-    responses = []
+def llm_processing(
+    context: AssetExecutionContext,
+    ollama: OllamaResource,
+    data_processing: DataProcessingResource,
+    available_models: Dict[str, Any],
+    input_data: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Process input data through Ollama LLM with batch processing.
 
-    for prompt_data in sample_prompts:
-        context.log.info(f"Processing prompt: {prompt_data['id']}")
+    Args:
+        available_models: Model availability status
+        input_data: DataFrame with text to process
 
-        try:
-            # Make the LLM call
-            response = ollama.chat(
-                model=config.model,
-                messages=[
-                    {
-                        'role': 'user',
-                        'content': prompt_data['prompt']
-                    }
-                ],
-                options={
-                    'temperature': config.temperature,
-                    'num_ctx': config.num_ctx,
-                }
+    Returns:
+        DataFrame with LLM responses and metadata
+    """
+
+    # Determine which model to use
+    active_model = ollama.get_active_model(available_models)
+    context.log.info(f"Using model: {active_model}")
+
+    results = []
+    total_records = len(input_data)
+
+    # Create batches
+    batches = data_processing.create_batches(input_data.to_dict('records'))
+    context.log.info(f"Processing {total_records} records in {len(batches)} batches")
+
+    # Process each batch
+    for batch_idx, batch in enumerate(batches, 1):
+        context.log.info(f"Processing batch {batch_idx}/{len(batches)}")
+
+        # Prepare prompts for batch
+        prompts = []
+        for record in batch:
+            prompt = data_processing.create_prompt(
+                text=record['text'],
+                task=record['task'],
+                expected_length=record.get('expected_length', 'concise')
             )
 
-            result = {
-                'id': prompt_data['id'],
-                'task': prompt_data['task'],
-                'prompt': prompt_data['prompt'],
-                'response': response['message']['content'],
-                'model': config.model,
-                'tokens_prompt': response.get('prompt_eval_count', 0),
-                'tokens_response': response.get('eval_count', 0),
-            }
-
-            responses.append(result)
-            context.log.info(f"Completed {prompt_data['id']}: {len(result['response'])} chars")
-
-        except Exception as e:
-            context.log.error(f"Error processing {prompt_data['id']}: {e}")
-            responses.append({
-                'id': prompt_data['id'],
-                'error': str(e)
+            prompts.append({
+                'id': record['id'],
+                'prompt': prompt,
+                'task': record['task'],
+                'original_text': record['text'],
             })
 
-    return responses
+        # Process batch through Ollama
+        batch_results = ollama.batch_chat(
+            prompts=prompts,
+            model=active_model,
+            system_prompt="You are a helpful assistant. Be concise and direct in your responses."
+        )
+
+        # Add to results
+        for result in batch_results:
+            if result['success']:
+                results.append({
+                    'id': result['id'],
+                    'text': result['original_text'],
+                    'task': result['task'],
+                    'prompt': result['prompt'],
+                    'response': result['response'],
+                    'model': result['model'],
+                    'tokens_input': result['tokens_input'],
+                    'tokens_output': result['tokens_output'],
+                    'total_tokens': result['total_tokens'],
+                    'status': 'success'
+                })
+            else:
+                context.log.error(f"Error processing ID {result['id']}: {result.get('error', 'Unknown error')}")
+                results.append({
+                    'id': result['id'],
+                    'text': result['original_text'],
+                    'task': result['task'],
+                    'error': result.get('error', 'Unknown error'),
+                    'status': 'failed'
+                })
+
+    results_df = pd.DataFrame(results)
+
+    # Save outputs if configured
+    if data_processing.save_outputs:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"llm_results_{timestamp}.csv"
+        output_path = data_processing.get_output_path(filename)
+
+        results_df.to_csv(output_path, index=False)
+        context.log.info(f"Saved results to {output_path}")
+
+    # Log summary
+    successful = len(results_df[results_df['status'] == 'success'])
+    context.log.info(f"Completed: {successful}/{total_records} successful")
+
+    return results_df
 
 
 @asset(
-    description="Aggregate and analyze LLM processing results",
+    description="Analyze and summarize LLM processing results",
     group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
 )
-def processing_summary(
-        context: AssetExecutionContext,
-        llm_responses: List[Dict[str, Any]]
+def processing_analytics(
+    context: AssetExecutionContext,
+    llm_processing: pd.DataFrame,
 ) -> MaterializeResult:
-    """Create a summary of the LLM processing run."""
+    """
+    Generate analytics and insights from LLM processing results.
 
-    total_prompts = len(llm_responses)
-    successful = sum(1 for r in llm_responses if 'response' in r)
-    failed = total_prompts - successful
+    Args:
+        llm_processing: DataFrame with LLM processing results
 
-    total_prompt_tokens = sum(r.get('tokens_prompt', 0) for r in llm_responses)
-    total_response_tokens = sum(r.get('tokens_response', 0) for r in llm_responses)
+    Returns:
+        MaterializeResult with metadata and summary
+        :param llm_processing:
+        :param context:
+    """
 
-    summary = {
-        'total_prompts': total_prompts,
-        'successful': successful,
-        'failed': failed,
-        'total_tokens': total_prompt_tokens + total_response_tokens,
-        'prompt_tokens': total_prompt_tokens,
-        'response_tokens': total_response_tokens,
-    }
+    total_records = len(llm_processing)
+    successful = len(llm_processing[llm_processing['status'] == 'success'])
+    failed = total_records - successful
+    success_rate = (successful / total_records * 100) if total_records > 0 else 0
 
-    # Log sample responses
-    context.log.info("Sample responses:")
-    for response in llm_responses[:2]:  # Show first 2
-        if 'response' in response:
-            context.log.info(f"\n[{response['id']}] {response['task']}")
-            context.log.info(f"Response: {response['response'][:200]}...")
+    context.log.info(f"Analytics: {successful}/{total_records} successful ({success_rate:.1f}%)")
+
+    if successful == 0:
+        context.log.error("No successful processing results to analyze")
+        return MaterializeResult(
+            metadata={
+                "total_records": total_records,
+                "successful": 0,
+                "failed": failed,
+                "success_rate": 0.0,
+            }
+        )
+
+    # Filter to successful records
+    success_df = llm_processing[llm_processing['status'] == 'success']
+
+    # Token statistics
+    total_input_tokens = success_df['tokens_input'].sum()
+    total_output_tokens = success_df['tokens_output'].sum()
+    total_tokens = total_input_tokens + total_output_tokens
+    avg_tokens_per_request = total_tokens / successful if successful > 0 else 0
+
+    # Task breakdown
+    task_summary = llm_processing.groupby('task')['status'].value_counts().unstack(fill_value=0)
+
+    # Response length statistics
+    success_df['response_length'] = success_df['response'].str.len()
+    avg_response_length = success_df['response_length'].mean()
+
+    # Create detailed summary markdown
+    summary_md = f"""
+## LLM Processing Summary
+
+### Overall Statistics
+- **Total Records:** {total_records}
+- **Successful:** {successful} ({success_rate:.1f}%)
+- **Failed:** {failed}
+- **Model Used:** {success_df['model'].iloc[0] if len(success_df) > 0 else 'N/A'}
+
+### Token Usage
+- **Total Tokens:** {total_tokens:,}
+- **Input Tokens:** {total_input_tokens:,}
+- **Output Tokens:** {total_output_tokens:,}
+- **Average per Request:** {avg_tokens_per_request:.1f}
+
+### Response Statistics
+- **Average Response Length:** {avg_response_length:.0f} characters
+- **Min Response Length:** {success_df['response_length'].min():.0f}
+- **Max Response Length:** {success_df['response_length'].max():.0f}
+
+### Task Breakdown
+{task_summary.to_markdown() if not task_summary.empty else 'No task data'}
+
+### Sample Results
+"""
+
+    # Add sample results (first 3 successful)
+    for idx, row in success_df.head(3).iterrows():
+        sample_text = row['text'][:100] + '...' if len(row['text']) > 100 else row['text']
+        sample_response = row['response'][:150] + '...' if len(row['response']) > 150 else row['response']
+
+        summary_md += f"""
+#### {row['task'].upper()} (ID: {row['id']})
+- **Input:** {sample_text}
+- **Output:** {sample_response}
+- **Tokens:** {row['total_tokens']}
+"""
+
+    # Log key metrics
+    context.log.info(f"Total tokens used: {total_tokens:,}")
+    context.log.info(f"Average response length: {avg_response_length:.0f} chars")
 
     return MaterializeResult(
         metadata={
-            "total_prompts": total_prompts,
+            "total_records": total_records,
             "successful": successful,
             "failed": failed,
-            "total_tokens": total_prompt_tokens + total_response_tokens,
-            "summary": MetadataValue.json(summary),
-            "sample_response": MetadataValue.md(
-                f"**Sample Output:**\n\n{llm_responses[0].get('response', 'N/A')[:300]}..."
-                if llm_responses and 'response' in llm_responses[0] else "No responses"
-            )
+            "success_rate": MetadataValue.float(success_rate),
+            "total_tokens": MetadataValue.float(float(total_tokens)),
+            "input_tokens": MetadataValue.float(float(total_input_tokens)),
+            "output_tokens": MetadataValue.float(float(total_output_tokens)),
+            "avg_tokens_per_request": MetadataValue.float(float(avg_tokens_per_request)),
+            "avg_response_length": MetadataValue.float(float(avg_response_length)),
+            "summary": MetadataValue.md(summary_md),
+            "task_breakdown": MetadataValue.md(task_summary.to_markdown() if not task_summary.empty else "No data"),
         }
     )
+
+
