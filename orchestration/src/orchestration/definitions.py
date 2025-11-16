@@ -18,8 +18,9 @@ from orchestration.db.connectivity_test.jobs import (
     frequent_database_tests_schedule,
 )
 
+from orchestration.marketeer.ingest import assets as marketeer_assets
 
-all_assets = load_assets_from_modules([db_assets, llm_assets])
+all_assets = load_assets_from_modules([db_assets, llm_assets, marketeer_assets])
 
 definitions = Definitions(
     assets=all_assets,
@@ -28,6 +29,7 @@ definitions = Definitions(
     resources={
         "postgres": PostgresResource(),
         "pgvector": PgVectorResource(),
+        "marketeer_pg": PostgresResource(database="marketeer"),
         "mongo": MongoResource(),
         "redis": RedisResource(),
         "dynamodb": DynamoDBResource(),

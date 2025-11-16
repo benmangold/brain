@@ -1,6 +1,6 @@
 # brain
 
-a brain for my local macbook
+a brain for my macbook
 
 ## folds
 
