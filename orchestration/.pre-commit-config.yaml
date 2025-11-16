@@ -5,3 +5,12 @@ repos:
       - id: uv-lock
         files: orchestration/pyproject.toml
         args: [ --project, orchestration/pyproject.toml ]
+      - id: uv-export
+        name: uv-export
+        description: "Automatically run 'uv export' on your project dependencies"
+        entry: uv export
+        language: python
+        files: ^uv\.lock$
+        args: ["--frozen", "--output-file=requirements.txt", "--quiet"]
+        pass_filenames: false
+        additional_dependencies: []
