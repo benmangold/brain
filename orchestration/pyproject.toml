@@ -38,9 +38,3 @@ root_module = "orchestration"
 registry_modules = [
     "orchestration.components.*",
 ]
-
-
-
-
-
-
