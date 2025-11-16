@@ -126,6 +126,7 @@ class RedisResource(ConfigurableResource):
 
     host: str = os.getenv("REDIS_HOST", "localhost")
     port: int = int(os.getenv("REDIS_PORT", "6379"))
+    _client: Any = None
 
     def setup_for_execution(self, context) -> None:
         self._client = redis.Redis(
