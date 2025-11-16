@@ -205,3 +205,5 @@ __marimo__/
 .tmp*
 
 dagster_home
+
+.git
