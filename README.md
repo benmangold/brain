@@ -1,25 +1,30 @@
 # brain
 
-software to extend my brain and make life better
+a brain for my local macbook
 
 ## folds
 
-each folder is a `fold` of the brain, a dedicated process
+each folder is a `fold` of the brain, a dedicated process or layer of the stack
 
-### persistence
+### persistence (memory)
+
+a multipurpose persistence layer
 
 docker-managed databases composed together, data managed with mounted volumes to allow easy management and backups
 
 includes:
 
 - postgresql - relational database
-
 - pg-vector - dedicated vector store
-
 - redis - key-value store
+- mongodb
+- dynamodb
 
-- 
+### orchestration (sub-conscious thought)
 
-### orchestration
+data orchestration with dagster
 
-data orchesetration server with dagster
+- runs arbitrary python code
+- prompts local `ollama` LLMs
+- writes to persistence layer  
+- calls external APIs

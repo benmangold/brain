@@ -39,5 +39,10 @@ definitions = Definitions(
             timeout=30,
             num_ctx=2048,
         ),
+        "data_processing": DataProcessingResource(
+            batch_size=5,
+            save_outputs=True,
+            output_dir="./dagster_home/tmp/dagster_ollama_outputs",
+        ),
     },
 )
