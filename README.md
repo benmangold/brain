@@ -10,7 +10,7 @@ each folder is a `fold` of the brain, a dedicated process or layer of the stack
 
 a multipurpose persistence layer
 
-docker-managed databases composed together, data managed with mounted volumes to allow easy management and backups
+docker-managed databases composed together, data managed with mounted volumes within `persistence/data` to allow easy management and backups
 
 includes:
 

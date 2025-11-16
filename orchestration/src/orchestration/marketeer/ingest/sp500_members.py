@@ -2,14 +2,13 @@ import pandas as pd
 from datetime import datetime, timezone
 import json
 import requests
-from dagster import asset, AssetExecutionContext
-from orchestration.db.resources import PostgresResource
 
 from orchestration.db.resources import PostgresResource
 
 
 class SP500Members:
-    def ingest(self, cur, conn):
+    @staticmethod
+    def ingest(cur, conn):
         try:
             url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 
@@ -23,21 +22,21 @@ class SP500Members:
             # Pass the HTML content from the response to pd.read_html
             # pd.read_html returns a list of DataFrames, one for each table found
             table = pd.read_html(response.text)
-            print("TABLE")
             # You can then access the desired table from the list, e.g., the first one:
 
             stock_list = table[1]
             stock_list_data = stock_list["Symbol"].to_list()
+            now = datetime.now(timezone.utc)
 
             for stock_symbol in stock_list_data:
                 data = {"stockSymbol": stock_symbol}
 
                 cur.execute(
-                    "SET search_path TO ingest; INSERT INTO sp500_members (symbol, json,  created_at, source) VALUES (%s, %s, %s, %s);",
+                    "INSERT INTO ingest.sp500_members (symbol, json,  created_at, source) VALUES (%s, %s, %s, %s);",
                     (
                         str(stock_symbol),
                         json.dumps(data),
-                        datetime.now(timezone.utc),
+                        now,
                         "wikipedia",
                     ),
                 )
@@ -46,7 +45,6 @@ class SP500Members:
             cur.execute("SELECT * FROM ingest.sp500_members")
             records = cur.fetchall()
             print(f"Ingested {len(records)} SP500 members")
-
         except Exception as e:
             print(e)
 

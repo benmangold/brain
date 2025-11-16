@@ -65,6 +65,5 @@ def marketeer_ingest_sp500members(
     """Create the ingest schema if it doesn't exist"""
     with marketeer_pg.get_connection() as conn:
         with conn.cursor() as cur:
-            sp500_members = SP500Members()
-            stock_list = sp500_members.ingest(cur, conn)
+            stock_list = SP500Members.ingest(cur, conn)
             return stock_list
