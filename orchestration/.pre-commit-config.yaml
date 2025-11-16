@@ -4,3 +4,5 @@ repos:
     rev: 0.9.9
     hooks:
       - id: uv-lock
+        files: pyproject.toml
+        args: [ --project, pyproject.toml ]
