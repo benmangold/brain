@@ -346,6 +346,14 @@ wheels = [
 ]
 
 [[package]]
+name = "cowsay"
+version = "6.1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/13/63c0a02c44024ee16f664e0b36eefeb22d54e93531630bd99e237986f534/cowsay-6.1-py3-none-any.whl", hash = "sha256:274b1e6fc1b966d53976333eb90ac94cb07a450a700b455af9fbdf882244b30a", size = 25560, upload-time = "2023-09-25T16:30:01.619Z" },
+]
+
+[[package]]
 name = "cryptography"
 version = "46.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1445,6 +1453,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },
+    { name = "cowsay" },
     { name = "dagster" },
     { name = "lxml" },
     { name = "ollama" },
@@ -1467,6 +1476,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "boto3", specifier = ">=1.40.74" },
+    { name = "cowsay", specifier = ">=6.1" },
     { name = "dagster", specifier = "==1.12.2" },
     { name = "lxml", specifier = ">=6.0.2" },
     { name = "ollama", specifier = ">=0.6.1" },
