@@ -27,12 +27,13 @@ class PostgresResource(ConfigurableResource):
 
     def setup_for_execution(self, context) -> None:
         self._pool = pool.SimpleConnectionPool(
-            1, 10,
+            1,
+            10,
             host=self.host,
             port=self.port,
             user=self.user,
             password=self.password,
-            database=self.database
+            database=self.database,
         )
 
     def teardown_after_execution(self, context) -> None:
@@ -63,12 +64,13 @@ class PgVectorResource(ConfigurableResource):
 
     def setup_for_execution(self, context) -> None:
         self._pool = pool.SimpleConnectionPool(
-            1, 10,
+            1,
+            10,
             host=self.host,
             port=self.port,
             user=self.user,
             password=self.password,
-            database=self.database
+            database=self.database,
         )
 
     def teardown_after_execution(self, context) -> None:
@@ -127,9 +129,7 @@ class RedisResource(ConfigurableResource):
 
     def setup_for_execution(self, context) -> None:
         self._client = redis.Redis(
-            host=self.host,
-            port=self.port,
-            decode_responses=True
+            host=self.host, port=self.port, decode_responses=True
         )
 
     def teardown_after_execution(self, context) -> None:
@@ -150,18 +150,18 @@ class DynamoDBResource(ConfigurableResource):
 
     def setup_for_execution(self, context) -> None:
         self._client = boto3.client(
-            'dynamodb',
+            "dynamodb",
             endpoint_url=self.endpoint_url,
             region_name=self.region_name,
             aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "dummy"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "dummy")
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "dummy"),
         )
         self._resource = boto3.resource(
-            'dynamodb',
+            "dynamodb",
             endpoint_url=self.endpoint_url,
             region_name=self.region_name,
             aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "dummy"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "dummy")
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "dummy"),
         )
 
     def teardown_after_execution(self, context) -> None:

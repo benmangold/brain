@@ -15,12 +15,13 @@ import pandas as pd
 from datetime import datetime
 from orchestration.llm.resources import OllamaResource, DataProcessingResource
 
-LLM_CONNECTIVITY_TEST_GROUP_NAME = 'llm_connectivity'
+LLM_CONNECTIVITY_TEST_GROUP_NAME = "llm_connectivity"
+
 
 @asset(
     description="Verify Ollama models are available and ready",
     retry_policy=RetryPolicy(max_retries=2, delay=5),
-    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
+    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME,
 )
 def available_models(
     context: AssetExecutionContext,
@@ -39,10 +40,12 @@ def available_models(
 
     # Log results
     for model_name, status in model_status.items():
-        if status['status'] == 'ready':
+        if status["status"] == "ready":
             context.log.info(f"✓ Model {model_name} is ready")
         else:
-            context.log.warning(f"✗ Model {model_name} failed: {status.get('error', 'Unknown error')}")
+            context.log.warning(
+                f"✗ Model {model_name} failed: {status.get('error', 'Unknown error')}"
+            )
 
     # List all available models
     all_models = ollama.list_available_models()
@@ -53,7 +56,7 @@ def available_models(
 
 @asset(
     description="Load or generate input data for LLM processing",
-    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
+    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME,
 )
 def input_data(context: AssetExecutionContext) -> pd.DataFrame:
     """
@@ -68,46 +71,46 @@ def input_data(context: AssetExecutionContext) -> pd.DataFrame:
     # Sample data - replace with your actual data source
     data = [
         {
-            'id': 1,
-            'text': 'Dagster is a modern data orchestration platform for building, deploying, and monitoring data pipelines.',
-            'task': 'summarize',
-            'expected_length': 'one sentence'
+            "id": 1,
+            "text": "Dagster is a modern data orchestration platform for building, deploying, and monitoring data pipelines.",
+            "task": "summarize",
+            "expected_length": "one sentence",
         },
         {
-            'id': 2,
-            'text': 'The weather is absolutely terrible today with heavy rain and strong winds.',
-            'task': 'sentiment',
-            'expected_length': 'one word: positive, negative, or neutral'
+            "id": 2,
+            "text": "The weather is absolutely terrible today with heavy rain and strong winds.",
+            "task": "sentiment",
+            "expected_length": "one word: positive, negative, or neutral",
         },
         {
-            'id': 3,
-            'text': 'Our technology stack includes Python, JavaScript, SQL, Docker, and Kubernetes.',
-            'task': 'extract',
-            'expected_length': 'comma-separated list'
+            "id": 3,
+            "text": "Our technology stack includes Python, JavaScript, SQL, Docker, and Kubernetes.",
+            "task": "extract",
+            "expected_length": "comma-separated list",
         },
         {
-            'id': 4,
-            'text': 'Machine learning models can be deployed locally using tools like Ollama for privacy and cost savings.',
-            'task': 'classify',
-            'expected_length': 'technical category'
+            "id": 4,
+            "text": "Machine learning models can be deployed locally using tools like Ollama for privacy and cost savings.",
+            "task": "classify",
+            "expected_length": "technical category",
         },
         {
-            'id': 5,
-            'text': 'Data engineering involves building robust pipelines to extract, transform, and load data efficiently.',
-            'task': 'keywords',
-            'expected_length': '3-5 keywords'
+            "id": 5,
+            "text": "Data engineering involves building robust pipelines to extract, transform, and load data efficiently.",
+            "task": "keywords",
+            "expected_length": "3-5 keywords",
         },
         {
-            'id': 6,
-            'text': 'The new product launch exceeded expectations with 10,000 users in the first week.',
-            'task': 'sentiment',
-            'expected_length': 'one word'
+            "id": 6,
+            "text": "The new product launch exceeded expectations with 10,000 users in the first week.",
+            "task": "sentiment",
+            "expected_length": "one word",
         },
         {
-            'id': 7,
-            'text': 'Cloud computing, edge computing, and quantum computing represent different paradigms.',
-            'task': 'extract',
-            'expected_length': 'list'
+            "id": 7,
+            "text": "Cloud computing, edge computing, and quantum computing represent different paradigms.",
+            "task": "extract",
+            "expected_length": "list",
         },
     ]
 
@@ -115,7 +118,7 @@ def input_data(context: AssetExecutionContext) -> pd.DataFrame:
     context.log.info(f"Loaded {len(df)} records for processing")
 
     # Log task distribution
-    task_counts = df['task'].value_counts().to_dict()
+    task_counts = df["task"].value_counts().to_dict()
     context.log.info(f"Task distribution: {task_counts}")
 
     return df
@@ -124,7 +127,7 @@ def input_data(context: AssetExecutionContext) -> pd.DataFrame:
 @asset(
     description="Process input data through Ollama LLM",
     retry_policy=RetryPolicy(max_retries=1, delay=3),
-    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
+    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME,
 )
 def llm_processing(
     context: AssetExecutionContext,
@@ -152,7 +155,7 @@ def llm_processing(
     total_records = len(input_data)
 
     # Create batches
-    batches = data_processing.create_batches(input_data.to_dict('records'))
+    batches = data_processing.create_batches(input_data.to_dict("records"))
     context.log.info(f"Processing {total_records} records in {len(batches)} batches")
 
     # Process each batch
@@ -163,49 +166,57 @@ def llm_processing(
         prompts = []
         for record in batch:
             prompt = data_processing.create_prompt(
-                text=record['text'],
-                task=record['task'],
-                expected_length=record.get('expected_length', 'concise')
+                text=record["text"],
+                task=record["task"],
+                expected_length=record.get("expected_length", "concise"),
             )
 
-            prompts.append({
-                'id': record['id'],
-                'prompt': prompt,
-                'task': record['task'],
-                'original_text': record['text'],
-            })
+            prompts.append(
+                {
+                    "id": record["id"],
+                    "prompt": prompt,
+                    "task": record["task"],
+                    "original_text": record["text"],
+                }
+            )
 
         # Process batch through Ollama
         batch_results = ollama.batch_chat(
             prompts=prompts,
             model=active_model,
-            system_prompt="You are a helpful assistant. Be concise and direct in your responses."
+            system_prompt="You are a helpful assistant. Be concise and direct in your responses.",
         )
 
         # Add to results
         for result in batch_results:
-            if result['success']:
-                results.append({
-                    'id': result['id'],
-                    'text': result['original_text'],
-                    'task': result['task'],
-                    'prompt': result['prompt'],
-                    'response': result['response'],
-                    'model': result['model'],
-                    'tokens_input': result['tokens_input'],
-                    'tokens_output': result['tokens_output'],
-                    'total_tokens': result['total_tokens'],
-                    'status': 'success'
-                })
+            if result["success"]:
+                results.append(
+                    {
+                        "id": result["id"],
+                        "text": result["original_text"],
+                        "task": result["task"],
+                        "prompt": result["prompt"],
+                        "response": result["response"],
+                        "model": result["model"],
+                        "tokens_input": result["tokens_input"],
+                        "tokens_output": result["tokens_output"],
+                        "total_tokens": result["total_tokens"],
+                        "status": "success",
+                    }
+                )
             else:
-                context.log.error(f"Error processing ID {result['id']}: {result.get('error', 'Unknown error')}")
-                results.append({
-                    'id': result['id'],
-                    'text': result['original_text'],
-                    'task': result['task'],
-                    'error': result.get('error', 'Unknown error'),
-                    'status': 'failed'
-                })
+                context.log.error(
+                    f"Error processing ID {result['id']}: {result.get('error', 'Unknown error')}"
+                )
+                results.append(
+                    {
+                        "id": result["id"],
+                        "text": result["original_text"],
+                        "task": result["task"],
+                        "error": result.get("error", "Unknown error"),
+                        "status": "failed",
+                    }
+                )
 
     results_df = pd.DataFrame(results)
 
@@ -219,7 +230,7 @@ def llm_processing(
         context.log.info(f"Saved results to {output_path}")
 
     # Log summary
-    successful = len(results_df[results_df['status'] == 'success'])
+    successful = len(results_df[results_df["status"] == "success"])
     context.log.info(f"Completed: {successful}/{total_records} successful")
 
     return results_df
@@ -227,7 +238,7 @@ def llm_processing(
 
 @asset(
     description="Analyze and summarize LLM processing results",
-    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME
+    group_name=LLM_CONNECTIVITY_TEST_GROUP_NAME,
 )
 def processing_analytics(
     context: AssetExecutionContext,
@@ -246,11 +257,13 @@ def processing_analytics(
     """
 
     total_records = len(llm_processing)
-    successful = len(llm_processing[llm_processing['status'] == 'success'])
+    successful = len(llm_processing[llm_processing["status"] == "success"])
     failed = total_records - successful
     success_rate = (successful / total_records * 100) if total_records > 0 else 0
 
-    context.log.info(f"Analytics: {successful}/{total_records} successful ({success_rate:.1f}%)")
+    context.log.info(
+        f"Analytics: {successful}/{total_records} successful ({success_rate:.1f}%)"
+    )
 
     if successful == 0:
         context.log.error("No successful processing results to analyze")
@@ -264,20 +277,22 @@ def processing_analytics(
         )
 
     # Filter to successful records
-    success_df = llm_processing[llm_processing['status'] == 'success']
+    success_df = llm_processing[llm_processing["status"] == "success"]
 
     # Token statistics
-    total_input_tokens = success_df['tokens_input'].sum()
-    total_output_tokens = success_df['tokens_output'].sum()
+    total_input_tokens = success_df["tokens_input"].sum()
+    total_output_tokens = success_df["tokens_output"].sum()
     total_tokens = total_input_tokens + total_output_tokens
     avg_tokens_per_request = total_tokens / successful if successful > 0 else 0
 
     # Task breakdown
-    task_summary = llm_processing.groupby('task')['status'].value_counts().unstack(fill_value=0)
+    task_summary = (
+        llm_processing.groupby("task")["status"].value_counts().unstack(fill_value=0)
+    )
 
     # Response length statistics
-    success_df['response_length'] = success_df['response'].str.len()
-    avg_response_length = success_df['response_length'].mean()
+    success_df["response_length"] = success_df["response"].str.len()
+    avg_response_length = success_df["response_length"].mean()
 
     # Create detailed summary markdown
     summary_md = f"""
@@ -308,8 +323,14 @@ def processing_analytics(
 
     # Add sample results (first 3 successful)
     for idx, row in success_df.head(3).iterrows():
-        sample_text = row['text'][:100] + '...' if len(row['text']) > 100 else row['text']
-        sample_response = row['response'][:150] + '...' if len(row['response']) > 150 else row['response']
+        sample_text = (
+            row["text"][:100] + "..." if len(row["text"]) > 100 else row["text"]
+        )
+        sample_response = (
+            row["response"][:150] + "..."
+            if len(row["response"]) > 150
+            else row["response"]
+        )
 
         summary_md += f"""
 #### {row['task'].upper()} (ID: {row['id']})
@@ -331,11 +352,13 @@ def processing_analytics(
             "total_tokens": MetadataValue.float(float(total_tokens)),
             "input_tokens": MetadataValue.float(float(total_input_tokens)),
             "output_tokens": MetadataValue.float(float(total_output_tokens)),
-            "avg_tokens_per_request": MetadataValue.float(float(avg_tokens_per_request)),
+            "avg_tokens_per_request": MetadataValue.float(
+                float(avg_tokens_per_request)
+            ),
             "avg_response_length": MetadataValue.float(float(avg_response_length)),
             "summary": MetadataValue.md(summary_md),
-            "task_breakdown": MetadataValue.md(task_summary.to_markdown() if not task_summary.empty else "No data"),
+            "task_breakdown": MetadataValue.md(
+                task_summary.to_markdown() if not task_summary.empty else "No data"
+            ),
         }
     )
-
-

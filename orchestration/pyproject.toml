@@ -17,6 +17,7 @@ dependencies = [
 dev = [
     "dagster-webserver",
     "dagster-dg-cli",
+    "black>=25.11.0",
 ]
 
 [build-system]

@@ -17,27 +17,28 @@ DB_CONNECTIVITY_TEST_GROUP_NAME = "database_connectivity"
 
 @asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
 def test_postgres_connection(
-        context: AssetExecutionContext,
-        postgres: PostgresResource
+    context: AssetExecutionContext, postgres: PostgresResource
 ) -> dict:
     """Test PostgreSQL connection and create a test table."""
 
     with postgres.get_connection() as conn:
         with conn.cursor() as cur:
             # Create test table if not exists
-            cur.execute("""
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS brain_test (
                     id SERIAL PRIMARY KEY,
                     message TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
             # Insert test record
             test_message = f"Dagster test at {datetime.now()}"
             cur.execute(
                 "INSERT INTO brain_test (message) VALUES (%s) RETURNING id",
-                (test_message,)
+                (test_message,),
             )
             record_id = cur.fetchone()[0]
 
@@ -45,7 +46,9 @@ def test_postgres_connection(
             cur.execute("SELECT COUNT(*) FROM brain_test")
             count = cur.fetchone()[0]
 
-            context.log.info(f"PostgreSQL: Inserted record {record_id}, total records: {count}")
+            context.log.info(
+                f"PostgreSQL: Inserted record {record_id}, total records: {count}"
+            )
 
             return {
                 "database": "postgres",
@@ -57,8 +60,7 @@ def test_postgres_connection(
 
 @asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
 def test_pgvector_connection(
-        context: AssetExecutionContext,
-        pgvector: PgVectorResource
+    context: AssetExecutionContext, pgvector: PgVectorResource
 ) -> dict:
     """Test pgvector connection and create a test table with vector column."""
 
@@ -68,20 +70,22 @@ def test_pgvector_connection(
             cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
             # Create test table with vector column
-            cur.execute("""
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS brain_embeddings (
                     id SERIAL PRIMARY KEY,
                     content TEXT,
                     embedding vector(3),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
             # Insert test record with a simple 3D vector
             test_vector = [0.1, 0.2, 0.3]
             cur.execute(
                 "INSERT INTO brain_embeddings (content, embedding) VALUES (%s, %s) RETURNING id",
-                (f"Test embedding at {datetime.now()}", test_vector)
+                (f"Test embedding at {datetime.now()}", test_vector),
             )
             record_id = cur.fetchone()[0]
 
@@ -89,7 +93,9 @@ def test_pgvector_connection(
             cur.execute("SELECT COUNT(*) FROM brain_embeddings")
             count = cur.fetchone()[0]
 
-            context.log.info(f"pgvector: Inserted record {record_id}, total records: {count}")
+            context.log.info(
+                f"pgvector: Inserted record {record_id}, total records: {count}"
+            )
 
             return {
                 "database": "pgvector",
@@ -100,10 +106,7 @@ def test_pgvector_connection(
 
 
 @asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
-def test_mongo_connection(
-        context: AssetExecutionContext,
-        mongo: MongoResource
-) -> dict:
+def test_mongo_connection(context: AssetExecutionContext, mongo: MongoResource) -> dict:
     """Test MongoDB connection and insert a test document."""
 
     collection = mongo.db.brain_test
@@ -112,14 +115,16 @@ def test_mongo_connection(
     test_doc = {
         "message": f"Dagster test at {datetime.now()}",
         "timestamp": datetime.now(),
-        "source": "dagster_asset"
+        "source": "dagster_asset",
     }
     result = collection.insert_one(test_doc)
 
     # Count documents
     count = collection.count_documents({})
 
-    context.log.info(f"MongoDB: Inserted document {result.inserted_id}, total documents: {count}")
+    context.log.info(
+        f"MongoDB: Inserted document {result.inserted_id}, total documents: {count}"
+    )
 
     return {
         "database": "mongodb",
@@ -130,10 +135,7 @@ def test_mongo_connection(
 
 
 @asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
-def test_redis_connection(
-        context: AssetExecutionContext,
-        redis: RedisResource
-) -> dict:
+def test_redis_connection(context: AssetExecutionContext, redis: RedisResource) -> dict:
     """Test Redis connection and set/get a key."""
 
     # Set a test key
@@ -165,8 +167,7 @@ def test_redis_connection(
 
 @asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME)
 def test_dynamodb_connection(
-        context: AssetExecutionContext,
-        dynamodb: DynamoDBResource
+    context: AssetExecutionContext, dynamodb: DynamoDBResource
 ) -> dict:
     """Test DynamoDB Local connection and create a test table."""
 
@@ -213,19 +214,24 @@ def test_dynamodb_connection(
         "status": "connected",
         "item_id": test_id,
         "total_items": count,
-        "tables": existing_tables + [table_name] if table_name not in existing_tables else existing_tables,
+        "tables": (
+            existing_tables + [table_name]
+            if table_name not in existing_tables
+            else existing_tables
+        ),
     }
 
 
-@asset(group_name=DB_CONNECTIVITY_TEST_GROUP_NAME,
-       deps=[
-           test_postgres_connection,
-           test_pgvector_connection,
-           test_mongo_connection,
-           test_redis_connection,
-           test_dynamodb_connection,
-       ]
-       )
+@asset(
+    group_name=DB_CONNECTIVITY_TEST_GROUP_NAME,
+    deps=[
+        test_postgres_connection,
+        test_pgvector_connection,
+        test_mongo_connection,
+        test_redis_connection,
+        test_dynamodb_connection,
+    ],
+)
 def all_databases_tested(context: AssetExecutionContext) -> dict:
     """Summary asset that depends on all database tests."""
 

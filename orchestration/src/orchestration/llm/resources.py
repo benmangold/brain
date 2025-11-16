@@ -14,29 +14,17 @@ class OllamaResource(ConfigurableResource):
     """Resource for interacting with Ollama LLM models."""
 
     primary_model: str = Field(
-        default="llama3.2:1b",
-        description="Primary Ollama model to use"
+        default="llama3.2:1b", description="Primary Ollama model to use"
     )
     fallback_model: Optional[str] = Field(
-        default=None,
-        description="Fallback model if primary fails"
+        default=None, description="Fallback model if primary fails"
     )
     temperature: float = Field(
-        default=0.7,
-        description="Sampling temperature (0.0-1.0)"
+        default=0.7, description="Sampling temperature (0.0-1.0)"
     )
-    max_tokens: int = Field(
-        default=500,
-        description="Maximum tokens to generate"
-    )
-    timeout: int = Field(
-        default=30,
-        description="Request timeout in seconds"
-    )
-    num_ctx: int = Field(
-        default=2048,
-        description="Context window size"
-    )
+    max_tokens: int = Field(default=500, description="Maximum tokens to generate")
+    timeout: int = Field(default=30, description="Request timeout in seconds")
+    num_ctx: int = Field(default=2048, description="Context window size")
 
     def _log(self, message: str, level: str = "info"):
         """Simple logging helper."""
@@ -71,7 +59,7 @@ class OllamaResource(ConfigurableResource):
         """
         try:
             models = ollama.list()
-            return [m['name'] for m in models.get('models', [])]
+            return [m["name"] for m in models.get("models", [])]
         except Exception as e:
             self._log(f"Error listing models: {e}", "error")
             return []
@@ -89,23 +77,21 @@ class OllamaResource(ConfigurableResource):
         try:
             response = ollama.chat(
                 model=model_name,
-                messages=[{'role': 'user', 'content': 'Say "OK"'}],
-                options={'num_ctx': 128}
+                messages=[{"role": "user", "content": 'Say "OK"'}],
+                options={"num_ctx": 128},
             )
 
             return {
-                'status': 'ready',
-                'model': model_name,
-                'test_response': response['message']['content']
+                "status": "ready",
+                "model": model_name,
+                "test_response": response["message"]["content"],
             }
         except Exception as e:
-            return {
-                'status': 'failed',
-                'model': model_name,
-                'error': str(e)
-            }
+            return {"status": "failed", "model": model_name, "error": str(e)}
 
-    def ensure_models_available(self, models: Optional[List[str]] = None) -> Dict[str, Dict[str, Any]]:
+    def ensure_models_available(
+        self, models: Optional[List[str]] = None
+    ) -> Dict[str, Dict[str, Any]]:
         """
         Ensure specified models are available, pulling if necessary.
 
@@ -132,9 +118,9 @@ class OllamaResource(ConfigurableResource):
                 results[model_name] = test_result
             else:
                 results[model_name] = {
-                    'status': 'failed',
-                    'model': model_name,
-                    'error': 'Failed to pull model'
+                    "status": "failed",
+                    "model": model_name,
+                    "error": "Failed to pull model",
                 }
 
         return results
@@ -153,23 +139,29 @@ class OllamaResource(ConfigurableResource):
             Exception if no models are available
         """
         # Try primary model first
-        if available_models.get(self.primary_model, {}).get('status') == 'ready':
+        if available_models.get(self.primary_model, {}).get("status") == "ready":
             return self.primary_model
 
         # Try fallback model
-        if self.fallback_model and available_models.get(self.fallback_model, {}).get('status') == 'ready':
-            self._log(f"Primary model unavailable, using fallback: {self.fallback_model}", "warning")
+        if (
+            self.fallback_model
+            and available_models.get(self.fallback_model, {}).get("status") == "ready"
+        ):
+            self._log(
+                f"Primary model unavailable, using fallback: {self.fallback_model}",
+                "warning",
+            )
             return self.fallback_model
 
         raise Exception("No available models for processing")
 
     def chat(
-            self,
-            prompt: str,
-            model: Optional[str] = None,
-            system_prompt: Optional[str] = None,
-            temperature: Optional[float] = None,
-            max_tokens: Optional[int] = None,
+        self,
+        prompt: str,
+        model: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Send a chat completion request to Ollama.
@@ -191,49 +183,44 @@ class OllamaResource(ConfigurableResource):
         messages = []
 
         if system_prompt:
-            messages.append({
-                'role': 'system',
-                'content': system_prompt
-            })
+            messages.append({"role": "system", "content": system_prompt})
 
-        messages.append({
-            'role': 'user',
-            'content': prompt
-        })
+        messages.append({"role": "user", "content": prompt})
 
         try:
             response = ollama.chat(
                 model=model,
                 messages=messages,
                 options={
-                    'temperature': temperature,
-                    'num_predict': max_tokens,
-                    'num_ctx': self.num_ctx,
-                }
+                    "temperature": temperature,
+                    "num_predict": max_tokens,
+                    "num_ctx": self.num_ctx,
+                },
             )
 
             return {
-                'success': True,
-                'response': response['message']['content'],
-                'model': model,
-                'tokens_input': response.get('prompt_eval_count', 0),
-                'tokens_output': response.get('eval_count', 0),
-                'total_tokens': response.get('prompt_eval_count', 0) + response.get('eval_count', 0),
+                "success": True,
+                "response": response["message"]["content"],
+                "model": model,
+                "tokens_input": response.get("prompt_eval_count", 0),
+                "tokens_output": response.get("eval_count", 0),
+                "total_tokens": response.get("prompt_eval_count", 0)
+                + response.get("eval_count", 0),
             }
 
         except Exception as e:
             self._log(f"Error during chat completion: {e}", "error")
             return {
-                'success': False,
-                'error': str(e),
-                'model': model,
+                "success": False,
+                "error": str(e),
+                "model": model,
             }
 
     def batch_chat(
-            self,
-            prompts: List[Dict[str, str]],
-            model: Optional[str] = None,
-            system_prompt: Optional[str] = None,
+        self,
+        prompts: List[Dict[str, str]],
+        model: Optional[str] = None,
+        system_prompt: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Process multiple prompts in batch.
@@ -249,24 +236,22 @@ class OllamaResource(ConfigurableResource):
         results = []
 
         for prompt_data in prompts:
-            prompt_id = prompt_data.get('id', 'unknown')
-            prompt_text = prompt_data.get('prompt', '')
+            prompt_id = prompt_data.get("id", "unknown")
+            prompt_text = prompt_data.get("prompt", "")
 
             self._log(f"Processing prompt: {prompt_id}")
 
             result = self.chat(
-                prompt=prompt_text,
-                model=model,
-                system_prompt=system_prompt
+                prompt=prompt_text, model=model, system_prompt=system_prompt
             )
 
             # Add the prompt ID to the result
-            result['id'] = prompt_id
-            result['prompt'] = prompt_text
+            result["id"] = prompt_id
+            result["prompt"] = prompt_text
 
             # Add any additional metadata from prompt_data
             for key, value in prompt_data.items():
-                if key not in ['id', 'prompt']:
+                if key not in ["id", "prompt"]:
                     result[key] = value
 
             results.append(result)
@@ -278,19 +263,18 @@ class DataProcessingResource(ConfigurableResource):
     """Resource for data processing utilities."""
 
     batch_size: int = Field(
-        default=5,
-        description="Number of records to process per batch"
+        default=5, description="Number of records to process per batch"
     )
     save_outputs: bool = Field(
-        default=True,
-        description="Whether to save outputs to disk"
+        default=True, description="Whether to save outputs to disk"
     )
     output_dir: str = Field(
-        default="tmp/dagster_ollama_outputs",
-        description="Directory for saving outputs"
+        default="tmp/dagster_ollama_outputs", description="Directory for saving outputs"
     )
 
-    def create_prompt(self, text: str, task: str, expected_length: str = "concise") -> str:
+    def create_prompt(
+        self, text: str, task: str, expected_length: str = "concise"
+    ) -> str:
         """
         Create a prompt based on task type.
 
@@ -303,12 +287,12 @@ class DataProcessingResource(ConfigurableResource):
             Formatted prompt string
         """
         task_templates = {
-            'summarize': f"Summarize this text in {expected_length}: {text}",
-            'sentiment': f"What is the sentiment ({expected_length})? Text: {text}",
-            'extract': f"Extract items as a {expected_length}: {text}",
-            'classify': f"Classify this into a {expected_length}: {text}",
-            'keywords': f"Extract {expected_length}: {text}",
-            'general': text
+            "summarize": f"Summarize this text in {expected_length}: {text}",
+            "sentiment": f"What is the sentiment ({expected_length})? Text: {text}",
+            "extract": f"Extract items as a {expected_length}: {text}",
+            "classify": f"Classify this into a {expected_length}: {text}",
+            "keywords": f"Extract {expected_length}: {text}",
+            "general": text,
         }
 
         return task_templates.get(task, text)
@@ -342,5 +326,5 @@ class DataProcessingResource(ConfigurableResource):
         """
         batches = []
         for i in range(0, len(data), self.batch_size):
-            batches.append(data[i:i + self.batch_size])
+            batches.append(data[i : i + self.batch_size])
         return batches
