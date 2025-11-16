@@ -7,6 +7,7 @@ from orchestration.db.resources import PostgresResource
 
 from orchestration.db.resources import PostgresResource
 
+
 class SP500Members:
     def ingest(self, cur, conn):
         try:
@@ -50,10 +51,8 @@ class SP500Members:
             print(e)
 
 
-if __name__=="__main__":
-    marketeer_pg = PostgresResource(
-        database="marketeer"
-    )
+if __name__ == "__main__":
+    marketeer_pg = PostgresResource(database="marketeer")
 
     sp500_members = SP500Members()
     stock_list = sp500_members.ingest(None, None)

@@ -8,9 +8,7 @@ MARKETEER_ASSETS_GROUP_NAME = "marketeer_ingest"
 
 
 @asset(group_name=MARKETEER_ASSETS_GROUP_NAME)
-def marketeer_database(
-    context: AssetExecutionContext, postgres: PostgresResource
-):
+def marketeer_database(context: AssetExecutionContext, postgres: PostgresResource):
     with postgres.get_connection() as conn:
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         with conn.cursor() as cur:
@@ -23,10 +21,7 @@ def marketeer_database(
                 )
 
 
-@asset(
-    group_name=MARKETEER_ASSETS_GROUP_NAME,
-    deps=[create_marketeer_database]
-)
+@asset(group_name=MARKETEER_ASSETS_GROUP_NAME, deps=[marketeer_database])
 def marketeer_ingest_schema(
     context: AssetExecutionContext, marketeer_pg: PostgresResource
 ):
@@ -39,10 +34,7 @@ def marketeer_ingest_schema(
                 context.log.info("Schema 'ingest' already exists, skipping creation")
 
 
-@asset(
-    group_name=MARKETEER_ASSETS_GROUP_NAME,
-    deps=[create_marketeer_ingest_schema]
-)
+@asset(group_name=MARKETEER_ASSETS_GROUP_NAME, deps=[marketeer_ingest_schema])
 def marketeer_ingest_sp500members_table(
     context: AssetExecutionContext, marketeer_pg: PostgresResource
 ):
@@ -63,9 +55,9 @@ def marketeer_ingest_sp500members_table(
             )
             conn.commit()
 
+
 @asset(
-    group_name=MARKETEER_ASSETS_GROUP_NAME,
-    deps=[marketeer_ingest_sp500members_table]
+    group_name=MARKETEER_ASSETS_GROUP_NAME, deps=[marketeer_ingest_sp500members_table]
 )
 def marketeer_ingest_sp500members(
     context: AssetExecutionContext, marketeer_pg: PostgresResource

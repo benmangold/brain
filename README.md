@@ -17,14 +17,14 @@ includes:
 - postgresql - relational database
 - pg-vector - dedicated vector store
 - redis - key-value store
-- mongodb
-- dynamodb
+- mongodb - document db
+- dynamodb - document db
 
-### orchestration (sub-conscious thought)
+### orchestration (subconscious)
 
 data orchestration with dagster
 
 - runs arbitrary python code
 - prompts local `ollama` LLMs
 - writes to persistence layer  
-- calls external APIs
+- calls external APIs and URLs
