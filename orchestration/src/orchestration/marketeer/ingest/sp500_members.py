@@ -45,6 +45,7 @@ class SP500Members:
             cur.execute("SELECT * FROM ingest.sp500_members")
             records = cur.fetchall()
             print(f"Ingested {len(records)} SP500 members")
+            return stock_list_data
         except Exception as e:
             print(e)
 

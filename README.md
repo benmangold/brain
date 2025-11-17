@@ -25,6 +25,6 @@ includes:
 data orchestration with dagster
 
 - runs python jobs
-- writes to persistence layer
+- manages data in persistence layer
 - prompts local `ollama` LLMs
 - calls external APIs and URLs

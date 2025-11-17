@@ -18,14 +18,34 @@ from orchestration.db.connectivity_test.jobs import (
     frequent_database_tests_schedule,
 )
 
-from orchestration.marketeer.ingest import assets as marketeer_assets
+from orchestration.marketeer.ingest.jobs import (
+    process_queue_job,
+    daily_queue_processing_schedule,
+)
 
-all_assets = load_assets_from_modules([db_assets, llm_assets, marketeer_assets])
+from orchestration.marketeer import assets as marketeer_assets
+from orchestration.marketeer.ingest import assets as marketeer_ingest_assets
+from orchestration.marketeer.persistence import assets as marketeer_persistence_assets
+
+
+all_assets = load_assets_from_modules(
+    [
+        db_assets,
+        llm_assets,
+        marketeer_assets,
+        marketeer_ingest_assets,
+        marketeer_persistence_assets,
+    ]
+)
 
 definitions = Definitions(
     assets=all_assets,
-    jobs=[database_tests_job],
-    schedules=[frequent_database_tests_schedule, frequent_llm_tests_schedule],
+    jobs=[database_tests_job, process_queue_job],
+    schedules=[
+        frequent_database_tests_schedule,
+        frequent_llm_tests_schedule,
+        daily_queue_processing_schedule,
+    ],
     resources={
         "postgres": PostgresResource(),
         "pgvector": PgVectorResource(),
