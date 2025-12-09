@@ -5,6 +5,8 @@ version = "0.1.0"
 dependencies = [
     "boto3>=1.40.74",
     "dagster==1.12.2",
+    "dbt-core>=1.10.15",
+    "dbt-postgres>=1.9.1",
     "lxml>=6.0.2",
     "ollama>=0.6.1",
     "pandas>=2.3.3",

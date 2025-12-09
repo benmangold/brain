@@ -5,14 +5,7 @@ from datetime import datetime, date, timezone
 import pandas as pd
 
 from orchestration.marketeer.persistence.assets import (
-    marketeer_ingest_sp500_members_table,
-    marketeer_ingest_sp500_member_historical_data_table,
-    marketeer_ingest_sp500_member_historical_data_queue,
-    MARKETEER_DB_NAME,
     INGEST_SCHEMA_NAME,
-    SP500_MEMBERS_TABLE_NAME,
-    SP500_MEMBERS_DAILY_TABLE_NAME,
-    SP500_MEMBERS_DAILY_QUEUE_NAME,
 )
 
 
