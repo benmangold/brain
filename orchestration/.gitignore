@@ -207,3 +207,5 @@ __marimo__/
 dagster_home
 
 .git
+
+logs
