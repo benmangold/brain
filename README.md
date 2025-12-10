@@ -28,3 +28,8 @@ data orchestration with dagster
 - manages data in persistence layer
 - prompts local `ollama` LLMs
 - calls external APIs and URLs
+
+### api (concious)
+
+FastAPI backend
+
