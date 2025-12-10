@@ -31,7 +31,7 @@ services:
     volumes:
       - ./data/pgvector:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U brain"]
+      test: ["CMD-SHELL", "pg_isready -U brain_vectors"]
       interval: 10s
       timeout: 5s
       retries: 5
