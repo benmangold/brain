@@ -29,7 +29,10 @@ data orchestration with dagster
 - prompts local `ollama` LLMs
 - calls external APIs and URLs
 
-### api (concious)
+### api (nervous system)
 
 FastAPI backend
 
+### ui (consciousness)
+
+React UI
