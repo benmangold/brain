@@ -66,7 +66,7 @@ def test():
             )
 
             # Insert test record
-            test_message = f"Dagster test at {datetime.now()}"
+            test_message = f"api test at {datetime.now()}"
             cur.execute(
                 "INSERT INTO brain_test (message) VALUES (%s) RETURNING id",
                 (test_message,),

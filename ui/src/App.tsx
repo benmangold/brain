@@ -11,7 +11,7 @@ function App() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000')
+    axios.get('http://127.0.0.1:8000/test')
       .then(response => {
         console.log(response.data);
         setApiData(response.data)
